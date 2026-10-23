@@ -91,7 +91,7 @@ Config = {
     HideButtons = false,
     IntroEnabled = true,
     IntroMusicUrl = "https://files.catbox.moe/sdfi1j.mp3",
-    UIBackgroundUrl = "https://files.catbox.moe/sz7icy.png",
+    UIBackgroundUrl = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg.png",
     PlayerESP = false,
     PlayerTracers = false,
     RagdollCountdown = false,
@@ -143,7 +143,7 @@ function loadConfig()
 if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
 
 
-Config.UIBackgroundUrl = "https://files.catbox.moe/sz7icy.png"
+Config.UIBackgroundUrl = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg.png"
     pcall(function()
         if readfile and isfile and isfile(CONFIG_FILE) then
             local data = HttpService:JSONDecode(readfile(CONFIG_FILE))
@@ -161,7 +161,7 @@ loadConfig()
 Config.LockUI = false
 _G.CobraHubUILocked = false
 
-Config.UIBackgroundUrl = "https://files.catbox.moe/sz7icy.png"
+Config.UIBackgroundUrl = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg.png"
 
 
 DEFAULT_KEYS = {
@@ -339,7 +339,7 @@ uiBgDim.Selectable = false
 uiBgDim.Parent = main
 corner(uiBgDim, 14)
 
-BG_DEFAULT_URL = "https://files.catbox.moe/sz7icy.png"
+BG_DEFAULT_URL = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg.png"
 
 function backgroundCacheFile(url)
     return "CobraHub_UI_BG_" .. tostring(url):match("([^/]+)$"):gsub("[^%w%.%-_]", "_")
@@ -566,8 +566,8 @@ corner(miniRestoreButton, 9)
 stroke(miniRestoreButton, 2, Color3.fromRGB(255, 120, 0), 0)
 
 
-MINI_LOGO_URL = "https://files.catbox.moe/k9osuj.png"
-MINI_LOGO_FILE = "CobraHub_Mini_Restore_Logo.png"
+MINI_LOGO_URL = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobrahub_logo.png"
+MINI_LOGO_FILE = "CobraHub_Mini_Logo_v2.png"
 task.spawn(function()
     local assetId = nil
     pcall(function()
@@ -3360,7 +3360,7 @@ sectionLabel(settings, "UI")
 
 do
     local BACKGROUND_URLS = {
-        [1] = "https://files.catbox.moe/sz7icy.png",
+        [1] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg.png",
         [2] = "https://files.catbox.moe/5341xz.png",
         [3] = "https://files.catbox.moe/httilb.png",
         [4] = "https://files.catbox.moe/tj68cq.png",
