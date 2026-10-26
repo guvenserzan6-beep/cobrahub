@@ -3361,17 +3361,17 @@ sectionLabel(settings, "UI")
 do
     local BACKGROUND_URLS = {
         [1] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg_v2.png",
-        [2] = "https://files.catbox.moe/5341xz.png",
-        [3] = "https://files.catbox.moe/httilb.png",
-        [4] = "https://files.catbox.moe/tj68cq.png",
-        [5] = "https://files.catbox.moe/qozl8g.png",
-        [6] = "https://files.catbox.moe/9cpq91.jpeg",
-        [7] = "https://files.catbox.moe/pc73yz.jpeg",
-        [8] = "https://files.catbox.moe/ucw3ej.jpeg",
-        [9] = "https://files.catbox.moe/6mwr9m.png",
-        [10] = "https://files.catbox.moe/uu258w.jpeg",
-        [11] = "https://files.catbox.moe/lh97zw.png",
-        [12] = "https://files.catbox.moe/b2xyii.png",
+        [2] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_03.png",
+        [3] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_04.png",
+        [4] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_05.png",
+        [5] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_06.png",
+        [6] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_07.png",
+        [7] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_08.png",
+        [8] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_09.png",
+        [9] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_10.png",
+        [10] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_11.png",
+        [11] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_12.png",
+        [12] = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_foto_13.png",
     }
 
     task.spawn(function()
