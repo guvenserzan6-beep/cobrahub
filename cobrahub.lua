@@ -155,22 +155,21 @@ function saveConfig()
 end
 
 local function tryRead(file)
+    if not readfile then return nil end
     local ok, data = pcall(function()
-        if readfile and isfile and isfile(file) then
-            local raw = readfile(file)
-            if raw and #raw > 2 then return HttpService:JSONDecode(raw) end
+        -- Bazi executorlarda isfile yok ya da hatali; o zaman direkt okumayi dene
+        if isfile then
+            local okExists, exists = pcall(isfile, file)
+            if okExists and exists == false then return nil end
         end
+        local raw = readfile(file)
+        if type(raw) == "string" and #raw > 2 then return HttpService:JSONDecode(raw) end
     end)
     if ok and type(data) == "table" then return data end
     return nil
 end
 
 function loadConfig()
-
--- Otomatik kayit: her 2 saniyede degisen ayarlari kaydeder
-task.spawn(function()
-    while task.wait(2) do saveConfig() end
-end)
     local data = tryRead(CONFIG_FILE) or tryRead(CONFIG_FILE .. ".bak")
     if data then
         for k, v in pairs(data) do
@@ -184,6 +183,24 @@ end)
 end
 
 loadConfig()
+
+-- Otomatik kayit: her 2 saniyede degisen ayarlari kaydeder
+task.spawn(function()
+    while task.wait(2) do saveConfig() end
+end)
+
+-- Kayitli acik ayarlari oyuna girince tekrar calistirmak icin liste
+CobraHubStartupApply = {}
+local CobraHubSkipStartup = {
+    ["Bat Aimbot"] = true, ["Spin"] = true, ["Anti Ragdoll"] = true,
+    ["Auto Steal"] = true, ["Lock UI"] = true, ["Safe Mode"] = true, ["Intro"] = true,
+}
+function cobraHubRegisterStartup(labelText, defaultOn, fn)
+    if defaultOn ~= true or type(fn) ~= "function" then return end
+    local name = tostring(labelText or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if CobraHubSkipStartup[name] then return end
+    table.insert(CobraHubStartupApply, {name = name, fn = fn})
+end
 
 Config.LockUI = false
 _G.CobraHubUILocked = false
@@ -1217,6 +1234,7 @@ function toggleRow(parent, labelText, defaultOn, onToggle, initialKey, onKeyChan
         if onToggle then onToggle(nextState) end
         saveConfig()
     end)
+    cobraHubRegisterStartup(labelText, defaultOn, onToggle)
 
     if initialKey and tostring(initialKey) ~= "" then
         keybindBadge(row, initialKey, -112, 34, function(key)
@@ -1345,6 +1363,7 @@ function toggleWithNumberRow(parent, labelText, defaultOn, initialVal, onToggle,
         if onToggle then onToggle(on) end
         saveConfig()
     end)
+    cobraHubRegisterStartup(labelText, on, onToggle)
 
     if initialKey and tostring(initialKey) ~= "" then
         keybindBadge(row, initialKey, -156, 34, function(key)
@@ -9671,6 +9690,28 @@ end)
 if Config.BatAimbot and not Config.SafeMode then
     startBatAimbot()
 end
+
+-- Kayitli acik ayarlari tekrar uygula (oyundan cikip girince sifirlanmasin)
+task.spawn(function()
+    pcall(function()
+        if not LP.Character then LP.CharacterAdded:Wait() end
+        local ch = LP.Character
+        if ch then ch:WaitForChild("Humanoid", 10) end
+    end)
+    task.wait(1)
+    for _, item in ipairs(CobraHubStartupApply) do
+        pcall(item.fn, true)
+        task.wait(0.05)
+    end
+    if Config.BatSkin and Config.BatSkin ~= "Katana" and applyCobraBatSkinToAll then
+        pcall(applyCobraBatSkinToAll)
+    end
+    if Config.FOVChange and Config.FOVValue then
+        pcall(function() workspace.CurrentCamera.FieldOfView = Config.FOVValue end)
+    end
+    saveConfig()
+end)
+
 
 
 function cobraMakeGuiClickable(obj)
