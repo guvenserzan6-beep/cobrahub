@@ -129,7 +129,7 @@ Config = {
     StealBarPosY = nil,
 }
 
-CONFIG_FILE = "VyzeCC2_Config.json"
+CONFIG_FILE = "CobraHub_Config.json"
 
 function saveConfig()
     pcall(function()
@@ -143,14 +143,12 @@ function loadConfig()
 if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
 
 
-Config.UIBackgroundUrl = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg_v2.png"
+-- (kaydedilen arka plan korunuyor)
     pcall(function()
         if readfile and isfile and isfile(CONFIG_FILE) then
             local data = HttpService:JSONDecode(readfile(CONFIG_FILE))
             for k, v in pairs(data) do
-                if Config[k] ~= nil then
-                    Config[k] = v
-                end
+                Config[k] = v
             end
         end
     end)
@@ -161,7 +159,7 @@ loadConfig()
 Config.LockUI = false
 _G.CobraHubUILocked = false
 
-Config.UIBackgroundUrl = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg_v2.png"
+-- (kaydedilen arka plan korunuyor)
 
 
 DEFAULT_KEYS = {
@@ -342,7 +340,7 @@ corner(uiBgDim, 14)
 BG_DEFAULT_URL = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobra_bg_v2.png"
 
 function backgroundCacheFile(url)
-    return "CobraHub_UI_BG_" .. tostring(url):match("([^/]+)$"):gsub("[^%w%.%-_]", "_")
+    return "CobraHub_BG2_" .. tostring(url):match("([^/]+)$"):gsub("[^%w%.%-_]", "_")
 end
 
 function cachedBackgroundAsset(url)
@@ -396,7 +394,6 @@ function applyUIBackground(url)
         setImage(cached)
         return
     end
-    setImage(url)
 
     task.spawn(function()
         local data
