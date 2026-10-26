@@ -131,27 +131,56 @@ Config = {
 
 CONFIG_FILE = "CobraHub_Config.json"
 
+local function cleanConfig()
+    local out = {}
+    for k, v in pairs(Config) do
+        local t = typeof(v)
+        if type(k) == "string" and (t == "string" or t == "boolean" or (t == "number" and v == v and v ~= math.huge and v ~= -math.huge)) then
+            out[k] = v
+        end
+    end
+    return out
+end
+
+local lastSavedJson = nil
 function saveConfig()
     pcall(function()
-        if writefile then
-            writefile(CONFIG_FILE, HttpService:JSONEncode(Config))
-        end
+        if not writefile then return end
+        local json = HttpService:JSONEncode(cleanConfig())
+        if json == lastSavedJson then return end
+        writefile(CONFIG_FILE, json)
+        pcall(function() writefile(CONFIG_FILE .. ".bak", json) end)
+        lastSavedJson = json
     end)
 end
 
+local function tryRead(file)
+    local ok, data = pcall(function()
+        if readfile and isfile and isfile(file) then
+            local raw = readfile(file)
+            if raw and #raw > 2 then return HttpService:JSONDecode(raw) end
+        end
+    end)
+    if ok and type(data) == "table" then return data end
+    return nil
+end
+
 function loadConfig()
-if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
 
-
--- (kaydedilen arka plan korunuyor)
-    pcall(function()
-        if readfile and isfile and isfile(CONFIG_FILE) then
-            local data = HttpService:JSONDecode(readfile(CONFIG_FILE))
-            for k, v in pairs(data) do
+-- Otomatik kayit: her 2 saniyede degisen ayarlari kaydeder
+task.spawn(function()
+    while task.wait(2) do saveConfig() end
+end)
+    local data = tryRead(CONFIG_FILE) or tryRead(CONFIG_FILE .. ".bak")
+    if data then
+        for k, v in pairs(data) do
+            if Config[k] == nil or typeof(Config[k]) == typeof(v) then
                 Config[k] = v
             end
         end
-    end)
+        pcall(function() lastSavedJson = HttpService:JSONEncode(cleanConfig()) end)
+    end
+    if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
 end
 
 loadConfig()
