@@ -1943,7 +1943,7 @@ function getTPDownLandingY(char, root, hum)
 end
 
 function doAutoTPDown(force)
-    return -- teleport kapali
+    do return end -- teleport kapali
     local char = LP.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
