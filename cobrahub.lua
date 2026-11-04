@@ -82,6 +82,7 @@ Config = {
     SafeMode = false,
     UIScale = 30,
     LockUI = false,
+    TeleportEffect = false,
     HideUI = false,
     HideUIKey = "RightControl",
     MobileButtonSize = 50,
@@ -131,79 +132,88 @@ Config = {
 
 CONFIG_FILE = "CobraHub_Config.json"
 
-local function cleanConfig()
+CONFIG_BACKUP_FILE = "CobraHub_Config_backup.json"
+
+local function cobraSerializableConfig()
     local out = {}
     for k, v in pairs(Config) do
         local t = typeof(v)
-        if type(k) == "string" and (t == "string" or t == "boolean" or (t == "number" and v == v and v ~= math.huge and v ~= -math.huge)) then
+        if t == "number" or t == "string" or t == "boolean" then
             out[k] = v
+        elseif t == "EnumItem" then
+            out[k] = v.Name
+        elseif t == "Color3" then
+            out[k] = {__c3 = true, r = v.R, g = v.G, b = v.B}
         end
     end
     return out
 end
 
-local lastSavedJson = nil
 function saveConfig()
     pcall(function()
-        if not writefile then return end
-        local json = HttpService:JSONEncode(cleanConfig())
-        if json == lastSavedJson then return end
-        writefile(CONFIG_FILE, json)
-        pcall(function() writefile(CONFIG_FILE .. ".bak", json) end)
-        lastSavedJson = json
-    end)
-end
-
-local function tryRead(file)
-    if not readfile then return nil end
-    local ok, data = pcall(function()
-        -- Bazi executorlarda isfile yok ya da hatali; o zaman direkt okumayi dene
-        if isfile then
-            local okExists, exists = pcall(isfile, file)
-            if okExists and exists == false then return nil end
+        if writefile then
+            local ok, json = pcall(function() return HttpService:JSONEncode(cobraSerializableConfig()) end)
+            if ok and json and #json > 2 then
+                writefile(CONFIG_FILE, json)
+                pcall(function() writefile(CONFIG_BACKUP_FILE, json) end)
+            end
         end
-        local raw = readfile(file)
-        if type(raw) == "string" and #raw > 2 then return HttpService:JSONDecode(raw) end
     end)
-    if ok and type(data) == "table" then return data end
-    return nil
 end
 
 function loadConfig()
-    local data = tryRead(CONFIG_FILE) or tryRead(CONFIG_FILE .. ".bak")
-    if data then
-        for k, v in pairs(data) do
-            if Config[k] == nil or typeof(Config[k]) == typeof(v) then
-                Config[k] = v
+if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
+
+
+-- (kaydedilen arka plan korunuyor)
+    pcall(function()
+        if readfile and isfile then
+            local data
+            for _, f in ipairs({CONFIG_FILE, CONFIG_BACKUP_FILE}) do
+                if isfile(f) then
+                    local ok, d = pcall(function() return HttpService:JSONDecode(readfile(f)) end)
+                    if ok and type(d) == "table" then data = d break end
+                end
+            end
+            if data then
+                for k, v in pairs(data) do
+                    if type(v) == "table" and v.__c3 then
+                        Config[k] = Color3.new(v.r, v.g, v.b)
+                    else
+                        Config[k] = v
+                    end
+                end
             end
         end
-        pcall(function() lastSavedJson = HttpService:JSONEncode(cleanConfig()) end)
-    end
-    if Config.AutoPlayMode == "Semi" then Config.AutoPlayMode = "1 Btn" end
+    end)
 end
 
 loadConfig()
 
--- Otomatik kayit: her 2 saniyede degisen ayarlari kaydeder
+-- Otomatik kayit: ayarlar her 3 saniyede bir ve oyundan cikarken kaydedilir
 task.spawn(function()
-    while task.wait(2) do saveConfig() end
+    local last = ""
+    while task.wait(3) do
+        pcall(function()
+            local json = HttpService:JSONEncode(cobraSerializableConfig())
+            if json ~= last then
+                last = json
+                saveConfig()
+            end
+        end)
+    end
+end)
+pcall(function()
+    Players.PlayerRemoving:Connect(function(p)
+        if p == LP then saveConfig() end
+    end)
+end)
+pcall(function()
+    game:BindToClose(function() saveConfig() end)
 end)
 
--- Kayitli acik ayarlari oyuna girince tekrar calistirmak icin liste
-CobraHubStartupApply = {}
-local CobraHubSkipStartup = {
-    ["Bat Aimbot"] = true, ["Spin"] = true, ["Anti Ragdoll"] = true,
-    ["Auto Steal"] = true, ["Lock UI"] = true, ["Safe Mode"] = true, ["Intro"] = true,
-}
-function cobraHubRegisterStartup(labelText, defaultOn, fn)
-    if defaultOn ~= true or type(fn) ~= "function" then return end
-    local name = tostring(labelText or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    if CobraHubSkipStartup[name] then return end
-    table.insert(CobraHubStartupApply, {name = name, fn = fn})
-end
-
-Config.LockUI = false
-_G.CobraHubUILocked = false
+if type(Config.LockUI) ~= "boolean" then Config.LockUI = false end
+_G.CobraHubUILocked = Config.LockUI
 
 -- (kaydedilen arka plan korunuyor)
 
@@ -287,8 +297,7 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
-Config.LockUI = false
-_G.CobraHubUILocked = false
+_G.CobraHubUILocked = Config.LockUI
 main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = UDim2.new(0, 340, 0, 545)
@@ -298,7 +307,7 @@ main.BackgroundColor3 = COLORS.Background
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.Active = true
-main.Draggable = true
+main.Draggable = not Config.LockUI
 main.Parent = screenGui
 
 do
@@ -1234,7 +1243,6 @@ function toggleRow(parent, labelText, defaultOn, onToggle, initialKey, onKeyChan
         if onToggle then onToggle(nextState) end
         saveConfig()
     end)
-    cobraHubRegisterStartup(labelText, defaultOn, onToggle)
 
     if initialKey and tostring(initialKey) ~= "" then
         keybindBadge(row, initialKey, -112, 34, function(key)
@@ -1363,7 +1371,6 @@ function toggleWithNumberRow(parent, labelText, defaultOn, initialVal, onToggle,
         if onToggle then onToggle(on) end
         saveConfig()
     end)
-    cobraHubRegisterStartup(labelText, on, onToggle)
 
     if initialKey and tostring(initialKey) ~= "" then
         keybindBadge(row, initialKey, -156, 34, function(key)
@@ -3386,12 +3393,93 @@ end
 
 settings = makePage("Settings")
 
+-- Longer replicated position jumps; no network manipulation or forced anchoring.
+do
+    if type(_G.CobraHubTeleportEffectCleanup) == "function" then
+        pcall(_G.CobraHubTeleportEffectCleanup)
+    end
+
+    local activeRoot
+    local appliedOffset = Vector3.new(0, 0, 0)
+    local elapsed = 0
+    local shifted = false
+    local side = 1
+    local heartbeatConnection
+
+    local function clearOffset()
+        if activeRoot and activeRoot.Parent then
+            pcall(function()
+                activeRoot.CFrame = activeRoot.CFrame - appliedOffset
+            end)
+        end
+        activeRoot = nil
+        appliedOffset = Vector3.new(0, 0, 0)
+        shifted = false
+        elapsed = 0
+    end
+
+    local function setEnabled(enabled)
+        if heartbeatConnection then
+            heartbeatConnection:Disconnect()
+            heartbeatConnection = nil
+        end
+        clearOffset()
+        if not enabled then return end
+
+        heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
+            local character = LP.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            if not root or not humanoid or humanoid.Health <= 0 or humanoid.Sit then
+                clearOffset()
+                return
+            end
+            if activeRoot ~= root then
+                clearOffset()
+                activeRoot = root
+            end
+            elapsed = elapsed + dt
+            if elapsed < 0.18 then return end
+            elapsed = 0
+
+            if shifted then
+                root.CFrame = root.CFrame - appliedOffset
+                appliedOffset = Vector3.new(0, 0, 0)
+                shifted = false
+            else
+                local offset = root.CFrame.RightVector * (10 * side)
+                local params = RaycastParams.new()
+                params.FilterType = Enum.RaycastFilterType.Exclude
+                params.FilterDescendantsInstances = {character}
+                params.RespectCanCollide = true
+                -- Do not jump sideways through a wall.
+                if not Workspace:Raycast(root.Position, offset * 1.5, params) then
+                    root.CFrame = root.CFrame + offset
+                    appliedOffset = offset
+                    shifted = true
+                end
+                side = -side
+            end
+        end)
+    end
+
+    _G.CobraHubTeleportEffectCleanup = function()
+        setEnabled(false)
+    end
+    _G.CobraHubSetTeleportEffect = setEnabled
+
+    toggleRow(settings, "Teleport Effect", Config.TeleportEffect == true, function(state)
+        Config.TeleportEffect = state
+        setEnabled(state)
+    end)
+    setEnabled(Config.TeleportEffect == true)
+end
+
 
 
 main.Active = true
-Config.LockUI = false
-_G.CobraHubUILocked = false
-main.Draggable = true
+_G.CobraHubUILocked = Config.LockUI
+main.Draggable = not Config.LockUI
 if Config.HideUI then
     main.Visible = false
     uiMinimized = true
@@ -3865,6 +3953,7 @@ toggleRow(settings, "Lock UI", Config.LockUI, function(state)
     if state then
         _G.CobraHubMainWasDragged = _G.CobraHubMainWasDragged or false
     end
+    saveConfig()
 end)
 
 do
@@ -4021,6 +4110,8 @@ do
         Config.FOVValue = 70
         Config.UIScale = 30
         Config.LockUI = false
+        Config.TeleportEffect = false
+        if _G.CobraHubSetTeleportEffect then _G.CobraHubSetTeleportEffect(false) end
         Config.HideUI = false
         Config.StealBarPosX = nil
         Config.StealBarPosY = nil
@@ -9690,28 +9781,6 @@ end)
 if Config.BatAimbot and not Config.SafeMode then
     startBatAimbot()
 end
-
--- Kayitli acik ayarlari tekrar uygula (oyundan cikip girince sifirlanmasin)
-task.spawn(function()
-    pcall(function()
-        if not LP.Character then LP.CharacterAdded:Wait() end
-        local ch = LP.Character
-        if ch then ch:WaitForChild("Humanoid", 10) end
-    end)
-    task.wait(1)
-    for _, item in ipairs(CobraHubStartupApply) do
-        pcall(item.fn, true)
-        task.wait(0.05)
-    end
-    if Config.BatSkin and Config.BatSkin ~= "Katana" and applyCobraBatSkinToAll then
-        pcall(applyCobraBatSkinToAll)
-    end
-    if Config.FOVChange and Config.FOVValue then
-        pcall(function() workspace.CurrentCamera.FieldOfView = Config.FOVValue end)
-    end
-    saveConfig()
-end)
-
 
 
 function cobraMakeGuiClickable(obj)
