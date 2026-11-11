@@ -11,7 +11,7 @@ function executeStealV3(prompt)
     StealSys.isStealing = true
     StealSys.progressManual = true
     StealSys.stealStart = tick()
-    local duration = 1.3 / 5
+    local duration = 0.5
     StealSys.totalDuration = duration
     local function active()
         return Config.AutoSteal and Config.AutoStealVersion == "V3"
