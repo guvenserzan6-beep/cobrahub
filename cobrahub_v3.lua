@@ -11,7 +11,7 @@ function executeStealV3(prompt)
     StealSys.isStealing = true
     StealSys.progressManual = true
     StealSys.stealStart = tick()
-    local duration = 0.5
+    local duration = math.clamp(tonumber(Config.AutoStealV3Time) or 0.05, 0.01, 5)
     StealSys.totalDuration = duration
     local function active()
         return Config.AutoSteal and Config.AutoStealVersion == "V3"
@@ -56,6 +56,32 @@ end
 
 ]=]
 
+-- Editable V3 collection time, saved with the other settings.
+local v3TimeRow = [=[
+Config.AutoStealV3Time = math.clamp(tonumber(Config.AutoStealV3Time) or 0.05, 0.01, 5)
+do
+    local row = rowBase(combat, "V3 Sure (sn)", false)
+    local box = Instance.new("TextBox")
+    box.Text = tostring(Config.AutoStealV3Time)
+    box.Font = Enum.Font.GothamMedium
+    box.TextSize = 12
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    box.BorderSizePixel = 0
+    box.ClearTextOnFocus = false
+    box.Size = UDim2.new(0, 50, 0, 24)
+    box.Position = UDim2.new(1, -66, 0.5, -12)
+    box.Parent = row
+    corner(box, 8)
+    box.FocusLost:Connect(function()
+        local value = tonumber((box.Text:gsub(",", ".")))
+        if value then Config.AutoStealV3Time = math.clamp(value, 0.01, 5) end
+        box.Text = tostring(Config.AutoStealV3Time)
+        saveConfig()
+    end)
+end
+]=]
+
 local function patchDuel(source)
     local function replaceOnce(old, replacement)
         local first, last = source:find(old, 1, true)
@@ -69,6 +95,7 @@ local function patchDuel(source)
     replaceOnce('function executeStealV1(prompt)', v3 .. 'function executeStealV1(prompt)')
     replaceOnce('        if ver == "V3" then ver = "V2" end', '        -- V3 has its own execution path.')
     replaceOnce('        if ver == "V2" then\n            local target, dist', '        if ver == "V3" then\n            local prompt = stealFindNearestPrompt(radius)\n            if prompt then executeStealV3(prompt) end\n        elseif ver == "V2" then\n            local target, dist')
+    replaceOnce('setStealRadiusBadge = setRad\n', 'setStealRadiusBadge = setRad\n' .. v3TimeRow)
     return source
 end
 
