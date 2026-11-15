@@ -58,8 +58,7 @@ function executeStealV3(prompt, animalData)
             local podName = animalData and (animalData.name or animalData.slot)
             local remote = game:GetService("ReplicatedStorage"):FindFirstChild("StealAnimal")
             if remote and podName then remote:FireServer(podName) end
-            if prompt.Fire then prompt:Fire() end
-            if #data.trigger == 0 and not fireproximityprompt and not (remote and podName) and not prompt.Fire then
+            if #data.trigger == 0 and not fireproximityprompt and not (remote and podName) then
                 error("V3: pet alma islemi baslatilamadi; desteklenen tetikleme bulunamadi", 0)
             end
             updateStealProgress(1, "READY")
