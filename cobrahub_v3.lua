@@ -3,7 +3,7 @@ local DUEL_URL = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/0
 local MENU_URL = "https://raw.githubusercontent.com/guvenserzan6-beep/cobrahub/main/cobrahub_menu.lua"
 
 local v3 = [=[
-function executeStealV3(prompt)
+function executeStealV3(prompt, animalData)
     if not Config.AutoSteal or StealSys.isStealing or not prompt or not prompt.Parent then return end
     local data = stealBuildCallbacks(prompt)
     if not data.ready then return end
@@ -16,6 +16,13 @@ function executeStealV3(prompt)
     local function active()
         return Config.AutoSteal and Config.AutoStealVersion == "V3"
             and StealSys.isStealing and prompt.Parent ~= nil
+    end
+    local function distance()
+        local position = stealGetPromptPosition(prompt)
+        local character = LP.Character
+        local root = character and (character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso"))
+        if not position or not root then return math.huge end
+        return (position - root.Position).Magnitude
     end
     local function finish()
         pcall(function() prompt:InputHoldEnd() end)
@@ -38,14 +45,22 @@ function executeStealV3(prompt)
             end
             -- Prepare from the configured radius, then trigger on the first near frame.
             local waiting = tick()
-            while stealPromptDist(prompt) > 9.3 do
-                if not active() or tick() - waiting >= 1.6 / 5 then return end
+            while distance() > 9.3 do
+                if not active() or tick() - waiting >= 1.6 then return end
                 task.wait()
             end
             if not active() then return end
             for _, fn in ipairs(data.trigger) do task.spawn(fn) end
             if #data.trigger == 0 and fireproximityprompt then
                 fireproximityprompt(prompt)
+            end
+            -- Keep the classic V2 completion path, not just local callbacks.
+            local podName = animalData and (animalData.name or animalData.slot)
+            local remote = game:GetService("ReplicatedStorage"):FindFirstChild("StealAnimal")
+            if remote and podName then remote:FireServer(podName) end
+            if prompt.Fire then prompt:Fire() end
+            if #data.trigger == 0 and not fireproximityprompt and not (remote and podName) and not prompt.Fire then
+                error("V3: pet alma islemi baslatilamadi; desteklenen tetikleme bulunamadi", 0)
             end
             updateStealProgress(1, "READY")
         end)
@@ -94,7 +109,7 @@ local function patchDuel(source)
     replaceOnce('            if ver == "V3" then ver = "V2" end', '            -- Show the actual selected version.')
     replaceOnce('function executeStealV1(prompt)', v3 .. 'function executeStealV1(prompt)')
     replaceOnce('        if ver == "V3" then ver = "V2" end', '        -- V3 has its own execution path.')
-    replaceOnce('        if ver == "V2" then\n            local target, dist', '        if ver == "V3" then\n            local prompt = stealFindNearestPrompt(radius)\n            if prompt then executeStealV3(prompt) end\n        elseif ver == "V2" then\n            local target, dist')
+    replaceOnce('        if ver == "V2" then\n            local target, dist', '        if ver == "V3" then\n            local target, dist = stealNearestAnimal(radius)\n            if not target or (dist and dist > radius) then return end\n            local prompt = stealFindPromptForAnimal(target)\n            if prompt then executeStealV3(prompt, target) end\n        elseif ver == "V2" then\n            local target, dist')
     replaceOnce('setStealRadiusBadge = setRad\n', 'setStealRadiusBadge = setRad\n' .. v3TimeRow)
     return source
 end
